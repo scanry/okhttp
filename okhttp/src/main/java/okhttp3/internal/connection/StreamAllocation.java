@@ -18,6 +18,9 @@ package okhttp3.internal.connection;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.net.Proxy;
+import java.net.SocketAddress;
+
 import okhttp3.Address;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -81,6 +84,8 @@ public final class StreamAllocation {
   private boolean released;
   private boolean canceled;
   private HttpStream stream;
+  private  SocketAddress localAddress;
+  private  Proxy proxy;
 
   public StreamAllocation(ConnectionPool connectionPool, Address address) {
     this.connectionPool = connectionPool;
@@ -88,6 +93,13 @@ public final class StreamAllocation {
     this.routeSelector = new RouteSelector(address, routeDatabase());
   }
 
+  public void localAddress(SocketAddress localAddress){
+	  this.localAddress=localAddress;
+  }
+  
+  public void proxy(Proxy proxy){
+	  this.proxy=proxy;
+  }
   public HttpStream newStream(OkHttpClient client, boolean doExtensiveHealthChecks) {
     int connectTimeout = client.connectTimeoutMillis();
     int readTimeout = client.readTimeoutMillis();
@@ -183,6 +195,8 @@ public final class StreamAllocation {
     }
     RealConnection newConnection = new RealConnection(selectedRoute);
     acquire(newConnection);
+    newConnection.localAddress(localAddress);
+    newConnection.proxy(proxy);
 
     synchronized (connectionPool) {
       Internal.instance.put(connectionPool, newConnection);

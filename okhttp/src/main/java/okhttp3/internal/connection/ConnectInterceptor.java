@@ -36,7 +36,8 @@ public final class ConnectInterceptor implements Interceptor {
     RealInterceptorChain realChain = (RealInterceptorChain) chain;
     Request request = realChain.request();
     StreamAllocation streamAllocation = realChain.streamAllocation();
-
+    streamAllocation.localAddress(request.localAddress());
+    streamAllocation.proxy(request.proxy());
     // We need the network to satisfy this request. Possibly for validating a conditional GET.
     boolean doExtensiveHealthChecks = !request.method().equals("GET");
     HttpStream httpStream = streamAllocation.newStream(client, doExtensiveHealthChecks);

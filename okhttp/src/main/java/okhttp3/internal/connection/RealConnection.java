@@ -22,6 +22,7 @@ import java.net.ConnectException;
 import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownServiceException;
 import java.security.cert.X509Certificate;
@@ -81,6 +82,15 @@ public final class RealConnection extends FramedConnection.Listener implements C
   public final List<Reference<StreamAllocation>> allocations = new ArrayList<>();
   public boolean noNewStreams;
   public long idleAtNanos = Long.MAX_VALUE;
+  private  SocketAddress localAddress;
+  private  Proxy proxy;
+  public void localAddress(SocketAddress localAddress){
+	  this.localAddress=localAddress;
+  }
+  
+  public void proxy(Proxy proxy){
+	  this.proxy=proxy;
+  }
 
   public RealConnection(Route route) {
     this.route = route;
@@ -178,10 +188,18 @@ public final class RealConnection extends FramedConnection.Listener implements C
     Proxy proxy = route.proxy();
     Address address = route.address();
 
-    rawSocket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP
-        ? address.socketFactory().createSocket()
-        : new Socket(proxy);
-
+    if(proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP){
+    	rawSocket=address.socketFactory().createSocket();
+    }else{
+    	if(null!=this.proxy&&this.proxy.type()== Proxy.Type.HTTP){
+    		rawSocket=new Socket(this.proxy);
+    	}else{
+    		rawSocket=new Socket(proxy);
+    	}
+    }
+    if(null!=this.localAddress){
+    	rawSocket.bind(localAddress);
+    }
     rawSocket.setSoTimeout(readTimeout);
     try {
       Platform.get().connectSocket(rawSocket, route.socketAddress(), connectTimeout);
