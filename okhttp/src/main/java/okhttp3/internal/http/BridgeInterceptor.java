@@ -78,7 +78,7 @@ public final class BridgeInterceptor implements Interceptor {
     boolean transparentGzip = false;
     if (userRequest.header("Accept-Encoding") == null) {
       transparentGzip = true;
-      requestBuilder.header("Accept-Encoding", "gzip");
+      requestBuilder.header("Accept-Encoding", "gzip,deflate,sdch");
     }
 
     List<Cookie> cookies = cookieJar.loadForRequest(userRequest.url());
@@ -98,7 +98,8 @@ public final class BridgeInterceptor implements Interceptor {
         .request(userRequest);
 
     if (transparentGzip
-        && "gzip".equalsIgnoreCase(networkResponse.header("Content-Encoding"))
+        &&("deflate".equalsIgnoreCase(networkResponse.header("Content-Encoding"))||
+        		"gzip".equalsIgnoreCase(networkResponse.header("Content-Encoding")))
         && HttpHeaders.hasBody(networkResponse)) {
       GzipSource responseBody = new GzipSource(networkResponse.body().source());
       Headers strippedHeaders = networkResponse.headers().newBuilder()
